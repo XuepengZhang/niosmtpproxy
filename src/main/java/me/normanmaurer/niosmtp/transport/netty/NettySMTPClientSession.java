@@ -6,6 +6,7 @@
 package me.normanmaurer.niosmtp.transport.netty;
 
 import com.sailing.common.Util;
+import com.sailing.filter.KeyWordFilter;
 import me.normanmaurer.niosmtp.*;
 import me.normanmaurer.niosmtp.core.ReadySMTPClientFuture;
 import me.normanmaurer.niosmtp.core.SMTPClientFutureImpl;
@@ -155,9 +156,10 @@ class NettySMTPClientSession extends AbstractSMTPClientSession implements SMTPCl
             } else {
                 data = ((SMTPByteArrayMessage)msg).get7BitAsByteArray();
             }
-
-            log.info(new String(data));
-            log.info("==============================");
+            if (KeyWordFilter.keyWordFilter(new String(data))) {
+                this.channel.close();
+                return;
+            }
             this.channel.write(createDataTerminatingChannelBuffer(data));
         } else {
             Object msgIn;
@@ -171,8 +173,10 @@ class NettySMTPClientSession extends AbstractSMTPClientSession implements SMTPCl
                 msgIn = NettySMTPClientSession.IOExceptionInputStream.INSTANCE;
             }
             byte[] bytes = Util.toByteArray((InputStream) msgIn);
-            log.info(new String(bytes));
-            log.info("==============================");
+            if (KeyWordFilter.keyWordFilter(new String(bytes))) {
+                this.channel.close();
+                return;
+            }
             this.channel.write(createDataTerminatingChannelBuffer(bytes));
 //            this.channel.write(new ChunkedStream(new DataTerminatingInputStream((InputStream)msgIn)));
         }

@@ -16,6 +16,7 @@
 */
 package start;
 
+import com.sailing.filter.KeyWordFilter;
 import me.normanmaurer.niosmtp.transport.SMTPClientTransport;
 import me.normanmaurer.niosmtp.transport.netty.NettySMTPClientTransportFactory;
 import me.normanmaurer.niosmtpproxy.SMTPProxyProtocolHandlerChain;
@@ -26,24 +27,26 @@ import org.apache.james.protocols.smtp.SMTPConfigurationImpl;
 import org.apache.james.protocols.smtp.SMTPProtocol;
 import org.apache.james.protocols.smtp.SMTPProtocolHandlerChain;
 import org.apache.james.protocols.smtp.hook.SimpleHook;
-import org.junit.Test;
 
 import java.net.InetSocketAddress;
+import java.util.ArrayList;
+import java.util.List;
 
 public class SMTPProxyTest {
 
     public static void main(String args[]) throws Exception {
-        if (args.length != 3) {
-            args = new String[3];
-            args[0] = "25";
-            args[1] = "172.20.54.133";
-            args[2] = "25";
+        if (args.length >= 3) {
+            if (args.length>3) {
+                List<String> keywords = new ArrayList<String>();
+                for (int i = 3; i < args.length; i++) {
+                    keywords.add(args[i]);
+                }
+                KeyWordFilter.setKeyWordFilter(keywords);
+            }
         }
         NettyServer proxy = null;
         SMTPClientTransport clientTransport = null;
-
         clientTransport = NettySMTPClientTransportFactory.createNio().createPlain();
-
         SMTPProxyProtocolHandlerChain chain = new SMTPProxyProtocolHandlerChain(clientTransport, new InetSocketAddress(args[1], Integer.parseInt(args[2])));
         SMTPConfigurationImpl config = new SMTPConfigurationImpl();
         proxy = new NettyServer(new SMTPProtocol(chain, config, new SilentLogger()));
@@ -60,7 +63,6 @@ public class SMTPProxyTest {
         
     }
 
-    @Test
     public void test() throws Exception {
         NettyServer server = null;
         NettyServer proxy = null;
